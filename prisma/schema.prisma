@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model USER {
+  ID            String          @id @default(uuid())
+  TELEGRAM_ID   String          @unique
+  NOME          String
+  DATA_CRIACAO  DateTime        @default(now())
+
+  TREINOS       TREINO[]
+  SESSOES       SESSAO_TREINO[]
+}
+
+model TREINO {
+  ID            String           @id @default(uuid())
+  USER_ID       String
+  NOME          String
+  DATA_CRIACAO  DateTime         @default(now())
+
+  USER          USER             @relation(fields: [USER_ID], references: [ID])
+  EXERCICIOS    TREINO_EXERCICIO[]
+  SESSOES       SESSAO_TREINO[]
+}
+
+model EXERCICIO {
+  ID            String               @id @default(uuid())
+  NOME          String
+
+  TREINOS       TREINO_EXERCICIO[]
+  EXECUCOES     EXECUCAO_EXERCICIO[]
+}
+
+model TREINO_EXERCICIO {
+  ID            String     @id @default(uuid())
+  TREINO_ID     String
+  EXERCICIO_ID  String
+  ORDEM         Int
+
+  TREINO        TREINO     @relation(fields: [TREINO_ID], references: [ID])
+  EXERCICIO     EXERCICIO  @relation(fields: [EXERCICIO_ID], references: [ID])
+
+  @@unique([TREINO_ID, EXERCICIO_ID])
+}
+
+model SESSAO_TREINO {
+  ID             String               @id @default(uuid())
+  TREINO_ID      String
+  USER_ID        String
+  INICIADO_EM    DateTime             @default(now())
+  FINALIZADO_EM  DateTime?
+
+  TREINO         TREINO               @relation(fields: [TREINO_ID], references: [ID])
+  USER           USER                 @relation(fields: [USER_ID], references: [ID])
+  EXECUCOES      EXECUCAO_EXERCICIO[]
+}
+
+model EXECUCAO_EXERCICIO {
+  ID                 String         @id @default(uuid())
+  SESSAO_TREINO_ID   String
+  EXERCICIO_ID       String
+  PESO               Float
+  REPETICOES         Int
+
+  SESSAO_TREINO      SESSAO_TREINO  @relation(fields: [SESSAO_TREINO_ID], references: [ID])
+  EXERCICIO          EXERCICIO      @relation(fields: [EXERCICIO_ID], references: [ID])
+}
