@@ -1,10 +1,10 @@
 export type StartTreinoRequest = {
   userId: string;
-  nomeTreino: string;
+  treinoId: string;
 };
 
 export type StartTreinoData = {
-  sessionId: string;
+  sessaoId: string;
   treinoNome: string;
   primeiroExercicio: {
     id: string;

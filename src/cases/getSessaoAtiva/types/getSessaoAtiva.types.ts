@@ -7,4 +7,5 @@ export interface ActiveSessionData {
   treinoId: string;
   treinoNome: string;
   exercicioAtualId: string | null;
+  dataFinalizado?: Date;
 }

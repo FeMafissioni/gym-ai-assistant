@@ -23,6 +23,7 @@ class GetSessaoAtivaUseCase {
             treinoId: session.TREINO_ID,
             treinoNome: session.TREINO.NOME,
             exercicioAtualId: session.EXERCICIO_ATUAL_ID,
+            dataFinalizado: session.DATA_FIM || undefined,
         };
     }
 }

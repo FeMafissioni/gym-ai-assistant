@@ -1,11 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { StartTreinoRequest, StartTreinoData } from "./types/startTreino.types";
+import { GetCurrentExercicioUseCase } from "../getCurrentExercicio/getCurrentExercicio.cases";
 
 const prisma = new PrismaClient();
 
 export class StartTreinoUseCase {
-  async execute({ userId, nomeTreino }: StartTreinoRequest): Promise<StartTreinoData> {
-    // 1️⃣ Verificar sessão ativa
+  async execute({ userId, treinoId }: StartTreinoRequest): Promise<StartTreinoData> {
     const activeSession = await prisma.sESSAO_TREINO.findFirst({
       where: {
         USER_ID: userId,
@@ -17,49 +17,35 @@ export class StartTreinoUseCase {
       throw new Error("Você já possui uma sessão de treino ativa.");
     }
 
-    const treino = await prisma.tREINO.findFirst({
+    const primeiroExercicio = await prisma.tREINO_EXERCICIO.findFirst({
       where: {
-        USER_ID: userId,
-        NOME: {
-          equals: nomeTreino,
-          mode: "insensitive",
-        },
+        TREINO_ID: treinoId,
+        ORDEM: 1,
       },
       include: {
-        EXERCICIOS: {
-          orderBy: {
-            ORDEM: "asc",
-          },
-          include: {
-            EXERCICIO: true,
-          },
-        },
+        TREINO: true,
       },
     });
 
-    if (!treino) {
-      throw new Error("Treino não encontrado.");
+    if (!primeiroExercicio) {
+      throw new Error("Treino não possui exercícios.");
     }
 
-    if (treino.EXERCICIOS.length === 0) {
-      throw new Error("Este treino não possui exercícios.");
-    }
-
-    const session = await prisma.sESSAO_TREINO.create({
+    const sessao = await prisma.sESSAO_TREINO.create({
       data: {
         USER_ID: userId,
-        TREINO_ID: treino.ID,
+        TREINO_ID: treinoId,
+        DATA_INICIO: new Date(),
+        EXERCICIO_ATUAL_ID: primeiroExercicio.EXERCICIO_ID,
       },
     });
 
-    const primeiro = treino.EXERCICIOS[0];
-
     return {
-      sessionId: session.ID,
-      treinoNome: treino.NOME,
+      sessaoId: sessao.ID,
+      treinoNome: primeiroExercicio.TREINO.NOME,
       primeiroExercicio: {
-        id: primeiro.EXERCICIO.ID,
-        nome: primeiro.EXERCICIO.NOME,
+        id: primeiroExercicio.EXERCICIO_ID,
+        nome: primeiroExercicio.EXERCICIO.NOME,
       },
     };
   }

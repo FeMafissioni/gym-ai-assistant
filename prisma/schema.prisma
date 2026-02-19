@@ -38,6 +38,7 @@ model EXERCICIO {
 
   TREINOS       TREINO_EXERCICIO[]
   EXECUCOES     EXECUCAO_EXERCICIO[]
+  SESSOES       SESSAO_TREINO[]
 }
 
 model TREINO_EXERCICIO {
@@ -50,17 +51,20 @@ model TREINO_EXERCICIO {
   EXERCICIO     EXERCICIO  @relation(fields: [EXERCICIO_ID], references: [ID])
 
   @@unique([TREINO_ID, EXERCICIO_ID])
+  @@unique([TREINO_ID, ORDEM])
 }
 
 model SESSAO_TREINO {
   ID             String               @id @default(uuid())
   TREINO_ID      String
   USER_ID        String
+  EXERCICIO_ATUAL_ID String
   INICIADO_EM    DateTime             @default(now())
   FINALIZADO_EM  DateTime?
 
   TREINO         TREINO               @relation(fields: [TREINO_ID], references: [ID])
   USER           USER                 @relation(fields: [USER_ID], references: [ID])
+  EXERCICIO      EXERCICIO            @relation(fields: [EXERCICIO_ATUAL_ID], references: [ID])
   EXECUCOES      EXECUCAO_EXERCICIO[]
 }
 
@@ -70,7 +74,11 @@ model EXECUCAO_EXERCICIO {
   EXERCICIO_ID       String
   PESO               Float
   REPETICOES         Int
+  ATUALIZADO_EM    DateTime         @default(now())
+
 
   SESSAO_TREINO      SESSAO_TREINO  @relation(fields: [SESSAO_TREINO_ID], references: [ID])
   EXERCICIO          EXERCICIO      @relation(fields: [EXERCICIO_ID], references: [ID])
+
+  @@unique([SESSAO_TREINO_ID, EXERCICIO_ID])
 }
