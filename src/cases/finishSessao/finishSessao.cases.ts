@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { FinishSessaoRequest, FinishSessaoResult } from "./types/finishSessao.types";
 
@@ -25,14 +25,13 @@ export class FinishSessaoUseCase {
         ID: session.sessionId,
       },
       data: {
-        STATUS: "FINALIZADO",
-        DATA_FIM: new Date(),
+        FINALIZADO_EM: new Date(),
       },
     });
 
     return {
       sessaoId: sessaoFinalizada.ID,
-      finalizadaEm: sessaoFinalizada.DATA_FIM!,
+      finalizadaEm: sessaoFinalizada.FINALIZADO_EM!,
     };
   }
 }

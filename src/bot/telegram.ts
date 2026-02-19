@@ -52,7 +52,7 @@ bot.command("SalvarTreino", async (ctx) => {
 
 bot.command("iniciar", async (ctx) => {
   const userId = ctx.from?.id.toString()
-  console.log(`Comando /iniciar recebido do usuário ${userId}`)
+  console.log("Iniciando treino para usuário:", userId)
   if (!userId) return
 
   // // Aqui você chama um usecase para buscar os treinos do usuário
@@ -98,6 +98,7 @@ bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
 
 bot.command("proximo", async (ctx) => {
   const userId = ctx.from?.id.toString()
+  console.log("Avançando exercício para usuário:", userId)
   if (!userId) return
 
   await advanceExercicioUseCase.execute({ userId })

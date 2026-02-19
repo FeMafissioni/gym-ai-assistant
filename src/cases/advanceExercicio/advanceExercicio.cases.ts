@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 import { AdvanceExercicioRequest, AdvanceExercicioResult } from "./types/advanceExercicio.types";
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { GetCurrentExercicioUseCase } from "../getCurrentExercicio/getCurrentExercicio.cases";
@@ -39,7 +39,7 @@ export class AdvanceExercicioUseCase {
           ID: session.sessionId,
         },
         data: {
-          DATA_FIM: new Date(),
+          FINALIZADO_EM: new Date(),
         },
       });
 

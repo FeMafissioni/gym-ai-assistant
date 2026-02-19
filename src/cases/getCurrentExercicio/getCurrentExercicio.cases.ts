@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 import { GetCurrentExercicioRequest, GetCurrentExercicioResult } from "./types/getCurrentExercicio.types";
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 
@@ -38,7 +38,7 @@ export class GetCurrentExercicioUseCase {
       sessaoId: session.sessionId,
       exercicio: {
         id: exercicio.ID,
-        nome: exercicio.NOME,
+        nome: exercicio.EXERCICIO.NOME,
         order: exercicio.ORDEM,
       },
     };

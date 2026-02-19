@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 import { StartTreinoRequest, StartTreinoData } from "./types/startTreino.types";
-import { GetCurrentExercicioUseCase } from "../getCurrentExercicio/getCurrentExercicio.cases";
 
 const prisma = new PrismaClient();
 
@@ -24,6 +23,7 @@ export class StartTreinoUseCase {
       },
       include: {
         TREINO: true,
+        EXERCICIO: true,
       },
     });
 
@@ -35,7 +35,7 @@ export class StartTreinoUseCase {
       data: {
         USER_ID: userId,
         TREINO_ID: treinoId,
-        DATA_INICIO: new Date(),
+        INICIADO_EM: new Date(),
         EXERCICIO_ATUAL_ID: primeiroExercicio.EXERCICIO_ID,
       },
     });

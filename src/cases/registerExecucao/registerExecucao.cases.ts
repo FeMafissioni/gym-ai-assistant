@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { RegisterExecucaoRequest, RegisterExecucaoResult } from "./types/registerExecucao.types";

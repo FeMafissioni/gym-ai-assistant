@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "../../../generated/prisma/client";
 import { ActiveSessionData, GetActiveSessionRequest } from "./types/getSessaoAtiva.types";
 
 
@@ -29,7 +29,7 @@ export class GetSessaoAtivaUseCase {
       treinoId: session.TREINO_ID,
       treinoNome: session.TREINO.NOME,
       exercicioAtualId: session.EXERCICIO_ATUAL_ID,
-      dataFinalizado: session.DATA_FIM || undefined,
+      dataFinalizado: session.FINALIZADO_EM || undefined,
     };
   }
 }
