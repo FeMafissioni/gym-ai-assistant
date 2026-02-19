@@ -1,16 +1,11 @@
-import { PrismaClient } from "../../generated/prisma/client";
-import { ParsedTreino } from "../openai/types/parser.types";
+import { PrismaClient } from "../../../generated/prisma/client";
+import { CreateTreinosFromParsedJsonInput } from "./types/saveTreinoParseado.types";
 
 
 const prisma = new PrismaClient();
 
-interface Input {
-  userId: string;
-  treinos: ParsedTreino[];
-}
-
 export class CreateTreinosFromParsedJsonUseCase {
-  async execute({ userId, treinos }: Input) {
+  async execute({ userId, treinos }: CreateTreinosFromParsedJsonInput) {
     return prisma.$transaction(async () => {
       const createdTreinos = [];
 

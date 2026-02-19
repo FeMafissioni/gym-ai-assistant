@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import dotenv from "dotenv";
 import { TreinoParserService } from "../openai/parser.service";
-import { CreateTreinosFromParsedJsonUseCase } from "../cases/saveTreinoParseado.cases";
+import { CreateTreinosFromParsedJsonUseCase } from "../cases/saveTreinoParseado/saveTreinoParseado.cases";
 
 dotenv.config()
 
