@@ -1,13 +1,20 @@
-export function formatExercicio(exercicio: any) {
+export type Exercicio = {
+  id: string;
+  nome: string;
+  order: number;
+  pesoUltimoRegistro?: number;
+  repUltimoRegistro?: number;
+}
+
+export function formatExercicio(exercicio: Exercicio) {
   return `
 🏋️ Exercício: ${exercicio.nome}
 
-Séries: ${exercicio.series}
-Reps alvo: ${exercicio.repeticoes}
-Carga sugerida: ${exercicio.cargaSugerida || "—"}
+Último peso: ${exercicio.pesoUltimoRegistro ?? "N/A"}
+Últimas reps: ${exercicio.repUltimoRegistro ?? "N/A"}
 
 Use:
-/registrar PESO REP
-/proximo
+-> Para registrar envie: (peso) (repetições)
+-> /proximo para avançar para o próximo exercício
 `
 }

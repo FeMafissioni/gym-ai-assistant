@@ -3,10 +3,9 @@ export interface GetCurrentExercicioRequest {
 }
 
 export interface GetCurrentExercicioResult {
-  sessaoId: string;
-  exercicio: {
-    id: string;
-    nome: string;
-    order: number;
-  };
+  id: string;
+  nome: string;
+  order: number;
+  pesoUltimoRegistro?: number;
+  repUltimoRegistro?: number
 }

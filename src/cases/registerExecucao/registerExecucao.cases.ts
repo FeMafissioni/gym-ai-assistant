@@ -1,9 +1,7 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { RegisterExecucaoRequest, RegisterExecucaoResult } from "./types/registerExecucao.types";
-
-const prisma = new PrismaClient();
 
 export class RegisterExecucaoUseCase {
   async execute(

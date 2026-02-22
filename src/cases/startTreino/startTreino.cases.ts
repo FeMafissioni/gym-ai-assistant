@@ -1,7 +1,5 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 import { StartTreinoRequest, StartTreinoData } from "./types/startTreino.types";
-
-const prisma = new PrismaClient();
 
 export class StartTreinoUseCase {
   async execute({ userId, treinoId }: StartTreinoRequest): Promise<StartTreinoData> {

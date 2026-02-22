@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FinishSessaoUseCase = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = require("../../lib/prisma");
 const getSessaoAtiva_cases_1 = require("../getSessaoAtiva/getSessaoAtiva.cases");
-const prisma = new client_1.PrismaClient();
 class FinishSessaoUseCase {
     async execute(request) {
         const { userId } = request;
@@ -14,18 +13,17 @@ class FinishSessaoUseCase {
             throw new Error("Sessão já está finalizada.");
         }
         // 2️⃣ Finalizar sessão
-        const sessaoFinalizada = await prisma.sESSAO_TREINO.update({
+        const sessaoFinalizada = await prisma_1.prisma.sESSAO_TREINO.update({
             where: {
                 ID: session.sessionId,
             },
             data: {
-                STATUS: "FINALIZADO",
-                DATA_FIM: new Date(),
+                FINALIZADO_EM: new Date(),
             },
         });
         return {
             sessaoId: sessaoFinalizada.ID,
-            finalizadaEm: sessaoFinalizada.DATA_FIM,
+            finalizadaEm: sessaoFinalizada.FINALIZADO_EM,
         };
     }
 }

@@ -1,10 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdvanceExercicioUseCase = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = require("../../lib/prisma");
 const getSessaoAtiva_cases_1 = require("../getSessaoAtiva/getSessaoAtiva.cases");
 const getCurrentExercicio_cases_1 = require("../getCurrentExercicio/getCurrentExercicio.cases");
-const prisma = new client_1.PrismaClient();
 class AdvanceExercicioUseCase {
     async execute(request) {
         const { userId } = request;
@@ -16,22 +15,22 @@ class AdvanceExercicioUseCase {
         }
         const getCurrent = new getCurrentExercicio_cases_1.GetCurrentExercicioUseCase();
         const current = await getCurrent.execute({ userId });
-        const proximoTreinoExercicio = await prisma.tREINO_EXERCICIO.findFirst({
+        const proximoTreinoExercicio = await prisma_1.prisma.tREINO_EXERCICIO.findFirst({
             where: {
                 TREINO_ID: session.treinoId,
-                ORDEM: current.exercicio.order + 1,
+                ORDEM: current.order + 1,
             },
             include: {
                 EXERCICIO: true,
             },
         });
         if (!proximoTreinoExercicio) {
-            await prisma.sESSAO_TREINO.update({
+            await prisma_1.prisma.sESSAO_TREINO.update({
                 where: {
                     ID: session.sessionId,
                 },
                 data: {
-                    DATA_FIM: new Date(),
+                    FINALIZADO_EM: new Date(),
                 },
             });
             return {
@@ -40,7 +39,7 @@ class AdvanceExercicioUseCase {
                 sessaoFinalizada: true,
             };
         }
-        await prisma.sESSAO_TREINO.update({
+        await prisma_1.prisma.sESSAO_TREINO.update({
             where: {
                 ID: session.sessionId,
             },

@@ -1,8 +1,5 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 import { CreateTreinosFromParsedJsonInput } from "./types/saveTreinoParseado.types";
-
-
-const prisma = new PrismaClient();
 
 export class CreateTreinosFromParsedJsonUseCase {
   async execute({ userId, treinos }: CreateTreinosFromParsedJsonInput) {

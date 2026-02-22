@@ -1,9 +1,6 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { FinishSessaoRequest, FinishSessaoResult } from "./types/finishSessao.types";
-
-
-const prisma = new PrismaClient();
 
 export class FinishSessaoUseCase {
   async execute(

@@ -1,9 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RegisterExecucaoUseCase = void 0;
-const client_1 = require("@prisma/client");
+const prisma_1 = require("../../lib/prisma");
 const getSessaoAtiva_cases_1 = require("../getSessaoAtiva/getSessaoAtiva.cases");
-const prisma = new client_1.PrismaClient();
 class RegisterExecucaoUseCase {
     async execute(request) {
         const { userId, peso, repeticoes } = request;
@@ -12,7 +11,7 @@ class RegisterExecucaoUseCase {
         if (!session.exercicioAtualId) {
             throw new Error("Sessão não possui exercício atual definido.");
         }
-        await prisma.eXECUCAO_EXERCICIO.upsert({
+        await prisma_1.prisma.eXECUCAO_EXERCICIO.upsert({
             where: {
                 SESSAO_TREINO_ID_EXERCICIO_ID: {
                     SESSAO_TREINO_ID: session.sessionId,
@@ -30,7 +29,7 @@ class RegisterExecucaoUseCase {
                 REPETICOES: repeticoes,
             },
         });
-        const exercicio = await prisma.eXERCICIO.findUnique({
+        const exercicio = await prisma_1.prisma.eXERCICIO.findUnique({
             where: { ID: session.exercicioAtualId },
         });
         return {

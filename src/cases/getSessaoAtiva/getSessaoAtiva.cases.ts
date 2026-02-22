@@ -1,8 +1,5 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 import { ActiveSessionData, GetActiveSessionRequest } from "./types/getSessaoAtiva.types";
-
-
-const prisma = new PrismaClient();
 
 export class GetSessaoAtivaUseCase {
   async execute(
@@ -20,6 +17,7 @@ export class GetSessaoAtivaUseCase {
       },
     });
 
+    console.log("Sessão ativa encontrada:", session)
     if (!session) {
       throw new Error("Você não possui sessão de treino ativa.");
     }

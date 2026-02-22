@@ -1,4 +1,4 @@
-import { Telegraf } from "telegraf";
+import { Telegraf, type Context } from "telegraf";
 import dotenv from "dotenv";
 import { TreinoParserService } from "../openai/parser.service";
 import { CreateTreinosFromParsedJsonUseCase } from "../cases/saveTreinoParseado/saveTreinoParseado.cases";
@@ -9,25 +9,56 @@ import { FinishSessaoUseCase } from "../cases/finishSessao/finishSessao.cases";
 import { RegisterExecucaoUseCase } from "../cases/registerExecucao/registerExecucao.cases";
 import { formatExercicio } from "../helpers/formatExercicio";
 import { GetSessaoAtivaUseCase } from "../cases/getSessaoAtiva/getSessaoAtiva.cases";
+import { GetUserTreinosUseCase } from "../cases/getUserTreinos/getUserTreinos.cases";
+import { SaveUserUseCase } from "../cases/saveUser/saveUser.cases";
+import { SaveUserResponse } from "../cases/saveUser/types/saveUser.types";
 
 dotenv.config()
 
-const bot = new Telegraf(process.env.TOKEN_BOT_TELEGRAM!)
+interface BotState {
+  user: SaveUserResponse;
+}
+
+export interface BotContext extends Context {
+  state: BotState;
+}
+
+const bot = new Telegraf<BotContext>(process.env.TOKEN_BOT_TELEGRAM!)
 
 const treinoParserService = new TreinoParserService()
 const createTreinosFromParsedJsonUseCase = new CreateTreinosFromParsedJsonUseCase()
 const getSessaoAtivaUseCase = new GetSessaoAtivaUseCase()
 const startSessionUseCase = new StartTreinoUseCase()
-//const getUserTreinosUseCase = new GetUserTreinosUseCase()
 const getCurrentExercicioUseCase = new GetCurrentExercicioUseCase()
 const advanceExercicioUseCase = new AdvanceExercicioUseCase()
 const finishSessionUseCase = new FinishSessaoUseCase()
 const registerSerieUseCase = new RegisterExecucaoUseCase()
+const getUserTreinosUseCase = new GetUserTreinosUseCase()
+const saveUserUseCase = new SaveUserUseCase()
 
+bot.use(async (ctx, next) => {
+  const telegramId = ctx.from?.id?.toString();
+  if (!telegramId) return next();
+
+  const nome = ctx.from!.first_name;
+
+  const user = await saveUserUseCase.execute({
+    telegramId,
+    nome,
+  });
+
+  ctx.state.user = user;
+
+  return next();
+});
 
 bot.start((ctx) => {
-    const firstName = ctx.from?.first_name || "usuário";
-    ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!`)
+    const firstName = ctx.from?.first_name ?? "atleta";
+    ctx.reply(
+      `Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
+      "\n\nEstou aqui para te acompanhar no treino." +
+      "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje."
+    )
 })
 
 bot.command("SalvarTreino", async (ctx) => {
@@ -41,7 +72,7 @@ bot.command("SalvarTreino", async (ctx) => {
   console.log(`Treino parseado: ${JSON.stringify(retornoIa.treinos)}`)
   try {
     await createTreinosFromParsedJsonUseCase.execute({
-      userId: ctx.message.from.id.toString(),
+      userId: ctx.state.user.id,
       treinos: retornoIa.treinos,
     })
     await ctx.reply("Treino salvo com sucesso!")
@@ -51,70 +82,65 @@ bot.command("SalvarTreino", async (ctx) => {
 })
 
 bot.command("iniciar", async (ctx) => {
-  const userId = ctx.from?.id.toString()
+  const userId = ctx.state.user.id
   console.log("Iniciando treino para usuário:", userId)
-  if (!userId) return
 
-  // // Aqui você chama um usecase para buscar os treinos do usuário
-  // const treinos = await getUserTreinosUseCase.execute({ userId })
+  const treinos = await getUserTreinosUseCase.execute({ userId })
 
-  // if (!treinos.length) {
-  //   await ctx.reply("Você ainda não possui treinos cadastrados.")
-  //   return
-  // }
+  if (!treinos.treinos.length) {
+    await ctx.reply("Você ainda não possui treinos cadastrados.")
+    return
+  }
 
-  // await ctx.reply(
-  //   "Escolha o treino de hoje:",
-  //   {
-  //     reply_markup: {
-  //       inline_keyboard: treinos.map(t => [
-  //         {
-  //           text: t.nome,
-  //           callback_data: `INICIAR_TREINO_${t.id}`
-  //         }
-  //       ])
-  //     }
-  //   }
-  // )
+  await ctx.reply(
+    "Escolha o treino de hoje:",
+    {
+      reply_markup: {
+        inline_keyboard: treinos.treinos.map(t => [
+          {
+            text: t.nome,
+            callback_data: `INICIAR_TREINO_${t.treinoId}`
+          }
+        ])
+      }
+    }
+  )
 })
 
 bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
-  const userId = ctx.from?.id.toString()
+  const userId = ctx.state.user.id
   const treinoId = ctx.match[1]
 
-  if (!userId) return
-
+  //Sessão iniciada
   await startSessionUseCase.execute({
     userId,
     treinoId
   })
 
   const exercicioAtual = await getCurrentExercicioUseCase.execute({
-    userId
+    userId, 
   })
-
+  console.log("Exercício atual:", exercicioAtual)
   await ctx.reply(formatExercicio(exercicioAtual))
 })
 
 bot.command("proximo", async (ctx) => {
-  const userId = ctx.from?.id.toString()
+  const userId = ctx.state.user.id
   console.log("Avançando exercício para usuário:", userId)
-  if (!userId) return
 
   await advanceExercicioUseCase.execute({ userId })
 
   const exercicioAtual = await getCurrentExercicioUseCase.execute({ userId })
-
+  
   await ctx.reply(formatExercicio(exercicioAtual))
 })
 
-bot.on("text", async (ctx) => {
-  const userId = ctx.from?.id.toString()
-  if (!userId) return
+bot.on("text", async (ctx, next) => {
+  const userId = ctx.state.user.id
 
   const texto = ctx.message.text.trim()
 
-  if (texto.startsWith("/")) return
+  if (texto.startsWith("/")) return next()
 
   const sessaoAtiva = await getSessaoAtivaUseCase.execute({ userId })
 
@@ -144,18 +170,15 @@ bot.on("text", async (ctx) => {
   }
 })
 
-
 bot.command("finalizar", async (ctx) => {
-  const userId = ctx.from?.id.toString()
-  if (!userId) return
-
+  const userId = ctx.state.user.id;
   try {
-    await finishSessionUseCase.execute({ userId })
-    await ctx.reply("Treino finalizado. Parabéns! 💪")
+    await finishSessionUseCase.execute({ userId });
+    await ctx.reply("Treino finalizado. Parabéns! 💪");
   } catch (err) {
-    await ctx.reply("Erro ao finalizar sessão.")
+    await ctx.reply("Erro ao finalizar sessão.");
   }
-})
+});
 
 
 bot.launch()

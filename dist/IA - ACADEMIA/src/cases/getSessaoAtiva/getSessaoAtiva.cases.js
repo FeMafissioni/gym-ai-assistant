@@ -1,12 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetSessaoAtivaUseCase = void 0;
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../../lib/prisma");
 class GetSessaoAtivaUseCase {
     async execute(request) {
         const { userId } = request;
-        const session = await prisma.sESSAO_TREINO.findFirst({
+        const session = await prisma_1.prisma.sESSAO_TREINO.findFirst({
             where: {
                 USER_ID: userId,
                 FINALIZADO_EM: null,
@@ -15,6 +14,7 @@ class GetSessaoAtivaUseCase {
                 TREINO: true,
             },
         });
+        console.log("Sessão ativa encontrada:", session);
         if (!session) {
             throw new Error("Você não possui sessão de treino ativa.");
         }
@@ -23,7 +23,7 @@ class GetSessaoAtivaUseCase {
             treinoId: session.TREINO_ID,
             treinoNome: session.TREINO.NOME,
             exercicioAtualId: session.EXERCICIO_ATUAL_ID,
-            dataFinalizado: session.DATA_FIM || undefined,
+            dataFinalizado: session.FINALIZADO_EM || undefined,
         };
     }
 }

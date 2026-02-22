@@ -1,10 +1,7 @@
-import { PrismaClient } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 import { AdvanceExercicioRequest, AdvanceExercicioResult } from "./types/advanceExercicio.types";
 import { GetSessaoAtivaUseCase } from "../getSessaoAtiva/getSessaoAtiva.cases";
 import { GetCurrentExercicioUseCase } from "../getCurrentExercicio/getCurrentExercicio.cases";
-
-
-const prisma = new PrismaClient();
 
 export class AdvanceExercicioUseCase {
   async execute(
@@ -26,7 +23,7 @@ export class AdvanceExercicioUseCase {
     const proximoTreinoExercicio = await prisma.tREINO_EXERCICIO.findFirst({
       where: {
         TREINO_ID: session.treinoId,
-        ORDEM: current.exercicio.order + 1,
+        ORDEM: current.order + 1,
       },
       include: {
         EXERCICIO: true,
