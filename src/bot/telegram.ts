@@ -23,7 +23,7 @@ export interface BotContext extends Context {
   state: BotState;
 }
 
-const bot = new Telegraf<BotContext>(process.env.TOKEN_BOT_TELEGRAM!)
+export const bot = new Telegraf<BotContext>(process.env.TOKEN_BOT_TELEGRAM!)
 
 const treinoParserService = new TreinoParserService()
 const createTreinosFromParsedJsonUseCase = new CreateTreinosFromParsedJsonUseCase()
@@ -69,7 +69,6 @@ bot.command("SalvarTreino", async (ctx) => {
     await ctx.reply(`Erro ao processar treino: ${retornoIa.erro}`)
     return
   }
-  console.log(`Treino parseado: ${JSON.stringify(retornoIa.treinos)}`)
   try {
     await createTreinosFromParsedJsonUseCase.execute({
       userId: ctx.state.user.id,
@@ -77,13 +76,12 @@ bot.command("SalvarTreino", async (ctx) => {
     })
     await ctx.reply("Treino salvo com sucesso!")
   } catch (error) {
-      await ctx.reply(`Erro ao salvar treino: ${error}`)
+      await ctx.reply(`Não foi possível salvar o treino, por favor tente novamente mais tarde.`)
     }
 })
 
 bot.command("iniciar", async (ctx) => {
   const userId = ctx.state.user.id
-  console.log("Iniciando treino para usuário:", userId)
 
   const treinos = await getUserTreinosUseCase.execute({ userId })
 
@@ -120,15 +118,19 @@ bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
   const exercicioAtual = await getCurrentExercicioUseCase.execute({
     userId, 
   })
-  console.log("Exercício atual:", exercicioAtual)
   await ctx.reply(formatExercicio(exercicioAtual))
 })
 
 bot.command("proximo", async (ctx) => {
   const userId = ctx.state.user.id
-  console.log("Avançando exercício para usuário:", userId)
 
-  await advanceExercicioUseCase.execute({ userId })
+  var hasOtherExercise = await advanceExercicioUseCase.execute({ userId })
+
+  if (hasOtherExercise.sessaoFinalizada) {
+    await finishSessionUseCase.execute({ userId });
+    await ctx.reply("Sessão finalizada. Parabéns! 💪");
+    return;
+  }
 
   const exercicioAtual = await getCurrentExercicioUseCase.execute({ userId })
   
@@ -179,6 +181,3 @@ bot.command("finalizar", async (ctx) => {
     await ctx.reply("Erro ao finalizar sessão.");
   }
 });
-
-
-bot.launch()

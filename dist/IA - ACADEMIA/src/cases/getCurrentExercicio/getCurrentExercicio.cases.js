@@ -4,19 +4,17 @@ exports.GetCurrentExercicioUseCase = void 0;
 const prisma_1 = require("../../lib/prisma");
 const getSessaoAtiva_cases_1 = require("../getSessaoAtiva/getSessaoAtiva.cases");
 class GetCurrentExercicioUseCase {
-    constructor(dependencies = {}) {
-        this.activeSessionProvider =
-            dependencies.activeSessionProvider ?? new getSessaoAtiva_cases_1.GetSessaoAtivaUseCase();
-        this.db = dependencies.db ?? prisma_1.prisma;
-    }
     async execute(request) {
         const { userId } = request;
-        const session = await this.activeSessionProvider.execute({ userId });
+        // // 1️⃣ Buscar sessão ativa
+        const getActiveSession = new getSessaoAtiva_cases_1.GetSessaoAtivaUseCase();
+        const session = await getActiveSession.execute({ userId });
         if (!session.exercicioAtualId) {
             throw new Error("Sessão ativa não possui exercício atual definido.");
         }
+        // 2️⃣ Buscar exercício atual e a última sessão finalizada deste treino
         const [exercicio, ultimaSessaoFinalizada] = await Promise.all([
-            this.db.tREINO_EXERCICIO.findFirst({
+            prisma_1.prisma.tREINO_EXERCICIO.findFirst({
                 where: {
                     TREINO_ID: session.treinoId,
                     EXERCICIO_ID: session.exercicioAtualId,
@@ -25,7 +23,7 @@ class GetCurrentExercicioUseCase {
                     EXERCICIO: true,
                 },
             }),
-            this.db.sESSAO_TREINO.findFirst({
+            prisma_1.prisma.sESSAO_TREINO.findFirst({
                 where: {
                     USER_ID: userId,
                     TREINO_ID: session.treinoId,
@@ -49,7 +47,7 @@ class GetCurrentExercicioUseCase {
             throw new Error("Exercício atual não encontrado.");
         }
         const ultimoRegistro = ultimaSessaoFinalizada
-            ? await this.db.eXECUCAO_EXERCICIO.findUnique({
+            ? await prisma_1.prisma.eXECUCAO_EXERCICIO.findUnique({
                 where: {
                     SESSAO_TREINO_ID_EXERCICIO_ID: {
                         SESSAO_TREINO_ID: ultimaSessaoFinalizada.ID,

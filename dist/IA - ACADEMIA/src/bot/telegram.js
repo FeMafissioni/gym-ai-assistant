@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.bot = void 0;
 const telegraf_1 = require("telegraf");
 const dotenv_1 = __importDefault(require("dotenv"));
 const parser_service_1 = require("../openai/parser.service");
@@ -17,7 +18,7 @@ const getSessaoAtiva_cases_1 = require("../cases/getSessaoAtiva/getSessaoAtiva.c
 const getUserTreinos_cases_1 = require("../cases/getUserTreinos/getUserTreinos.cases");
 const saveUser_cases_1 = require("../cases/saveUser/saveUser.cases");
 dotenv_1.default.config();
-const bot = new telegraf_1.Telegraf(process.env.TOKEN_BOT_TELEGRAM);
+exports.bot = new telegraf_1.Telegraf(process.env.TOKEN_BOT_TELEGRAM);
 const treinoParserService = new parser_service_1.TreinoParserService();
 const createTreinosFromParsedJsonUseCase = new saveTreinoParseado_cases_1.CreateTreinosFromParsedJsonUseCase();
 const getSessaoAtivaUseCase = new getSessaoAtiva_cases_1.GetSessaoAtivaUseCase();
@@ -28,7 +29,7 @@ const finishSessionUseCase = new finishSessao_cases_1.FinishSessaoUseCase();
 const registerSerieUseCase = new registerExecucao_cases_1.RegisterExecucaoUseCase();
 const getUserTreinosUseCase = new getUserTreinos_cases_1.GetUserTreinosUseCase();
 const saveUserUseCase = new saveUser_cases_1.SaveUserUseCase();
-bot.use(async (ctx, next) => {
+exports.bot.use(async (ctx, next) => {
     const telegramId = ctx.from?.id?.toString();
     if (!telegramId)
         return next();
@@ -40,13 +41,13 @@ bot.use(async (ctx, next) => {
     ctx.state.user = user;
     return next();
 });
-bot.start((ctx) => {
+exports.bot.start((ctx) => {
     const firstName = ctx.from?.first_name ?? "atleta";
     ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
         "\n\nEstou aqui para te acompanhar no treino." +
         "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje.");
 });
-bot.command("SalvarTreino", async (ctx) => {
+exports.bot.command("SalvarTreino", async (ctx) => {
     await ctx.reply("Enviando treino para o servidor...");
     const retornoIa = await treinoParserService.parse(ctx.message.text);
     if (!retornoIa.success) {
@@ -65,7 +66,7 @@ bot.command("SalvarTreino", async (ctx) => {
         await ctx.reply(`Erro ao salvar treino: ${error}`);
     }
 });
-bot.command("iniciar", async (ctx) => {
+exports.bot.command("iniciar", async (ctx) => {
     const userId = ctx.state.user.id;
     console.log("Iniciando treino para usuário:", userId);
     const treinos = await getUserTreinosUseCase.execute({ userId });
@@ -84,7 +85,7 @@ bot.command("iniciar", async (ctx) => {
         }
     });
 });
-bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
+exports.bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
     const userId = ctx.state.user.id;
     const treinoId = ctx.match[1];
     //Sessão iniciada
@@ -98,14 +99,19 @@ bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
     console.log("Exercício atual:", exercicioAtual);
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
-bot.command("proximo", async (ctx) => {
+exports.bot.command("proximo", async (ctx) => {
     const userId = ctx.state.user.id;
     console.log("Avançando exercício para usuário:", userId);
-    await advanceExercicioUseCase.execute({ userId });
+    var hasOtherExercise = await advanceExercicioUseCase.execute({ userId });
+    if (hasOtherExercise.sessaoFinalizada) {
+        await finishSessionUseCase.execute({ userId });
+        await ctx.reply("Sessão finalizada. Parabéns! 💪");
+        return;
+    }
     const exercicioAtual = await getCurrentExercicioUseCase.execute({ userId });
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
-bot.on("text", async (ctx, next) => {
+exports.bot.on("text", async (ctx, next) => {
     const userId = ctx.state.user.id;
     const texto = ctx.message.text.trim();
     if (texto.startsWith("/"))
@@ -132,7 +138,7 @@ bot.on("text", async (ctx, next) => {
         await ctx.reply("Erro ao registrar série.");
     }
 });
-bot.command("finalizar", async (ctx) => {
+exports.bot.command("finalizar", async (ctx) => {
     const userId = ctx.state.user.id;
     try {
         await finishSessionUseCase.execute({ userId });
@@ -142,4 +148,3 @@ bot.command("finalizar", async (ctx) => {
         await ctx.reply("Erro ao finalizar sessão.");
     }
 });
-bot.launch();

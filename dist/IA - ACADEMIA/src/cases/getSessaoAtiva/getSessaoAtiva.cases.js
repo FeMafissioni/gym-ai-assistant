@@ -14,7 +14,6 @@ class GetSessaoAtivaUseCase {
                 TREINO: true,
             },
         });
-        console.log("Sessão ativa encontrada:", session);
         if (!session) {
             throw new Error("Você não possui sessão de treino ativa.");
         }
