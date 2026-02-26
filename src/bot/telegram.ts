@@ -12,6 +12,9 @@ import { GetSessaoAtivaUseCase } from "../cases/getSessaoAtiva/getSessaoAtiva.ca
 import { GetUserTreinosUseCase } from "../cases/getUserTreinos/getUserTreinos.cases";
 import { SaveUserUseCase } from "../cases/saveUser/saveUser.cases";
 import { SaveUserResponse } from "../cases/saveUser/types/saveUser.types";
+import { GetResumoPosTreinoUseCase } from "../cases/getResumoPosTreino/getResumoPosTreino.cases";
+import { PostTreinoResumoService } from "../openai/postTreinoResumo.service";
+import { formatResumoPosTreino } from "../helpers/formatResumoPosTreino";
 
 dotenv.config()
 
@@ -35,6 +38,31 @@ const finishSessionUseCase = new FinishSessaoUseCase()
 const registerSerieUseCase = new RegisterExecucaoUseCase()
 const getUserTreinosUseCase = new GetUserTreinosUseCase()
 const saveUserUseCase = new SaveUserUseCase()
+const getResumoPosTreinoUseCase = new GetResumoPosTreinoUseCase()
+const postTreinoResumoService = new PostTreinoResumoService()
+
+async function sendPostWorkoutSummary(
+  ctx: Pick<BotContext, "reply">,
+  userId: string,
+  sessaoId: string
+) {
+  try {
+    const resumo = await getResumoPosTreinoUseCase.execute({ userId, sessaoId })
+
+    let mensagemResumo: string
+
+    try {
+      mensagemResumo = await postTreinoResumoService.generate(resumo)
+    } catch (error) {
+      console.error("Falha ao gerar resumo com IA. Enviando fallback determinístico.", error)
+      mensagemResumo = formatResumoPosTreino(resumo)
+    }
+
+    await ctx.reply(mensagemResumo)
+  } catch (error) {
+    console.error("Falha ao gerar resumo pós-treino.", error)
+  }
+}
 
 bot.use(async (ctx, next) => {
   const telegramId = ctx.from?.id?.toString();
@@ -76,6 +104,7 @@ bot.command("SalvarTreino", async (ctx) => {
     })
     await ctx.reply("Treino salvo com sucesso!")
   } catch (error) {
+      console.log("Erro ao salvar treino:", error)
       await ctx.reply(`Não foi possível salvar o treino, por favor tente novamente mais tarde.`)
     }
 })
@@ -127,8 +156,8 @@ bot.command("proximo", async (ctx) => {
   var hasOtherExercise = await advanceExercicioUseCase.execute({ userId })
 
   if (hasOtherExercise.sessaoFinalizada) {
-    await finishSessionUseCase.execute({ userId });
     await ctx.reply("Sessão finalizada. Parabéns! 💪");
+    await sendPostWorkoutSummary(ctx, userId, hasOtherExercise.sessaoId)
     return;
   }
 
@@ -175,8 +204,9 @@ bot.on("text", async (ctx, next) => {
 bot.command("finalizar", async (ctx) => {
   const userId = ctx.state.user.id;
   try {
-    await finishSessionUseCase.execute({ userId });
+    const sessaoFinalizada = await finishSessionUseCase.execute({ userId });
     await ctx.reply("Treino finalizado. Parabéns! 💪");
+    await sendPostWorkoutSummary(ctx, userId, sessaoFinalizada.sessaoId)
   } catch (err) {
     await ctx.reply("Erro ao finalizar sessão.");
   }
