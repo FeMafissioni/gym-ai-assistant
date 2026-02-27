@@ -1,20 +1,10 @@
 import { Telegraf, type Context } from "telegraf";
 import dotenv from "dotenv";
-import { TreinoParserService } from "../openai/parser.service";
-import { CreateTreinosFromParsedJsonUseCase } from "../cases/saveTreinoParseado/saveTreinoParseado.cases";
-import { StartTreinoUseCase } from "../cases/startTreino/startTreino.cases";
-import { GetCurrentExercicioUseCase } from "../cases/getCurrentExercicio/getCurrentExercicio.cases";
-import { AdvanceExercicioUseCase } from "../cases/advanceExercicio/advanceExercicio.cases";
-import { FinishSessaoUseCase } from "../cases/finishSessao/finishSessao.cases";
-import { RegisterExecucaoUseCase } from "../cases/registerExecucao/registerExecucao.cases";
-import { formatExercicio } from "../helpers/formatExercicio";
-import { GetSessaoAtivaUseCase } from "../cases/getSessaoAtiva/getSessaoAtiva.cases";
-import { GetUserTreinosUseCase } from "../cases/getUserTreinos/getUserTreinos.cases";
-import { SaveUserUseCase } from "../cases/saveUser/saveUser.cases";
 import { SaveUserResponse } from "../cases/saveUser/types/saveUser.types";
-import { GetResumoPosTreinoUseCase } from "../cases/getResumoPosTreino/getResumoPosTreino.cases";
-import { PostTreinoResumoService } from "../openai/postTreinoResumo.service";
+import { formatExercicio } from "../helpers/formatExercicio";
 import { formatResumoPosTreino } from "../helpers/formatResumoPosTreino";
+import { formatResumoSemanal } from "../helpers/formatResumoSemanal";
+import { createBotDependencies } from "./bot.dependencies";
 
 dotenv.config()
 
@@ -27,19 +17,10 @@ export interface BotContext extends Context {
 }
 
 export const bot = new Telegraf<BotContext>(process.env.TOKEN_BOT_TELEGRAM!)
+const deps = createBotDependencies()
 
-const treinoParserService = new TreinoParserService()
-const createTreinosFromParsedJsonUseCase = new CreateTreinosFromParsedJsonUseCase()
-const getSessaoAtivaUseCase = new GetSessaoAtivaUseCase()
-const startSessionUseCase = new StartTreinoUseCase()
-const getCurrentExercicioUseCase = new GetCurrentExercicioUseCase()
-const advanceExercicioUseCase = new AdvanceExercicioUseCase()
-const finishSessionUseCase = new FinishSessaoUseCase()
-const registerSerieUseCase = new RegisterExecucaoUseCase()
-const getUserTreinosUseCase = new GetUserTreinosUseCase()
-const saveUserUseCase = new SaveUserUseCase()
-const getResumoPosTreinoUseCase = new GetResumoPosTreinoUseCase()
-const postTreinoResumoService = new PostTreinoResumoService()
+const CMD_SALVAR_TREINO = /^(salvartreino|salvar_treino)$/i
+const CMD_RESUMO_SEMANA = /^(resumo_semana|resumosemana)$/i
 
 async function sendPostWorkoutSummary(
   ctx: Pick<BotContext, "reply">,
@@ -47,12 +28,12 @@ async function sendPostWorkoutSummary(
   sessaoId: string
 ) {
   try {
-    const resumo = await getResumoPosTreinoUseCase.execute({ userId, sessaoId })
+    const resumo = await deps.getResumoPosTreinoUseCase.execute({ userId, sessaoId })
 
     let mensagemResumo: string
 
     try {
-      mensagemResumo = await postTreinoResumoService.generate(resumo)
+      mensagemResumo = await deps.postTreinoResumoService.generate(resumo)
     } catch (error) {
       console.error("Falha ao gerar resumo com IA. Enviando fallback determinístico.", error)
       mensagemResumo = formatResumoPosTreino(resumo)
@@ -70,7 +51,7 @@ bot.use(async (ctx, next) => {
 
   const nome = ctx.from!.first_name;
 
-  const user = await saveUserUseCase.execute({
+  const user = await deps.saveUserUseCase.execute({
     telegramId,
     nome,
   });
@@ -89,16 +70,16 @@ bot.start((ctx) => {
     )
 })
 
-bot.command("SalvarTreino", async (ctx) => {
+bot.command(CMD_SALVAR_TREINO, async (ctx) => {
   await ctx.reply("Enviando treino para o servidor...")
-  const retornoIa = await treinoParserService.parse(ctx.message.text)
+  const retornoIa = await deps.treinoParserService.parse(ctx.message.text)
 
   if (!retornoIa.success) {
     await ctx.reply(`Erro ao processar treino: ${retornoIa.erro}`)
     return
   }
   try {
-    await createTreinosFromParsedJsonUseCase.execute({
+    await deps.createTreinosFromParsedJsonUseCase.execute({
       userId: ctx.state.user.id,
       treinos: retornoIa.treinos,
     })
@@ -112,7 +93,7 @@ bot.command("SalvarTreino", async (ctx) => {
 bot.command("iniciar", async (ctx) => {
   const userId = ctx.state.user.id
 
-  const treinos = await getUserTreinosUseCase.execute({ userId })
+  const treinos = await deps.getUserTreinosUseCase.execute({ userId })
 
   if (!treinos.treinos.length) {
     await ctx.reply("Você ainda não possui treinos cadastrados.")
@@ -139,12 +120,12 @@ bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
   const treinoId = ctx.match[1]
 
   //Sessão iniciada
-  await startSessionUseCase.execute({
+  await deps.startSessionUseCase.execute({
     userId,
     treinoId
   })
 
-  const exercicioAtual = await getCurrentExercicioUseCase.execute({
+  const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({
     userId, 
   })
   await ctx.reply(formatExercicio(exercicioAtual))
@@ -153,7 +134,7 @@ bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
 bot.command("proximo", async (ctx) => {
   const userId = ctx.state.user.id
 
-  var hasOtherExercise = await advanceExercicioUseCase.execute({ userId })
+  var hasOtherExercise = await deps.advanceExercicioUseCase.execute({ userId })
 
   if (hasOtherExercise.sessaoFinalizada) {
     await ctx.reply("Sessão finalizada. Parabéns! 💪");
@@ -161,7 +142,7 @@ bot.command("proximo", async (ctx) => {
     return;
   }
 
-  const exercicioAtual = await getCurrentExercicioUseCase.execute({ userId })
+  const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId })
   
   await ctx.reply(formatExercicio(exercicioAtual))
 })
@@ -173,7 +154,7 @@ bot.on("text", async (ctx, next) => {
 
   if (texto.startsWith("/")) return next()
 
-  const sessaoAtiva = await getSessaoAtivaUseCase.execute({ userId })
+  const sessaoAtiva = await deps.getSessaoAtivaUseCase.execute({ userId })
 
   if (!sessaoAtiva) {
     await ctx.reply("Você não possui uma sessão ativa no momento. Inicie um treino com /iniciar.");
@@ -188,7 +169,7 @@ bot.on("text", async (ctx, next) => {
   const repeticoes = Number(match[2])
 
   try {
-    await registerSerieUseCase.execute({
+    await deps.registerSerieUseCase.execute({
       userId,
       peso,
       repeticoes,
@@ -204,10 +185,31 @@ bot.on("text", async (ctx, next) => {
 bot.command("finalizar", async (ctx) => {
   const userId = ctx.state.user.id;
   try {
-    const sessaoFinalizada = await finishSessionUseCase.execute({ userId });
+    const sessaoFinalizada = await deps.finishSessionUseCase.execute({ userId });
     await ctx.reply("Treino finalizado. Parabéns! 💪");
     await sendPostWorkoutSummary(ctx, userId, sessaoFinalizada.sessaoId)
   } catch (err) {
     await ctx.reply("Erro ao finalizar sessão.");
+  }
+});
+
+bot.command(CMD_RESUMO_SEMANA, async (ctx) => {
+  const userId = ctx.state.user.id;
+
+  try {
+    const resumo = await deps.getResumoSemanalUseCase.execute({ userId })
+    let mensagemResumo: string
+
+    try {
+      mensagemResumo = await deps.resumoSemanalService.generate(resumo)
+    } catch (error) {
+      console.error("Falha ao gerar resumo semanal com IA. Enviando fallback determinístico.", error)
+      mensagemResumo = formatResumoSemanal(resumo)
+    }
+
+    await ctx.reply(mensagemResumo)
+  } catch (error) {
+    console.error("Falha ao gerar resumo semanal.", error)
+    await ctx.reply("Não foi possível gerar o resumo semanal agora. Tente novamente em instantes.")
   }
 });

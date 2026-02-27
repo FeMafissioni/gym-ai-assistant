@@ -3,11 +3,11 @@ import { CreateTreinosFromParsedJsonInput } from "./types/saveTreinoParseado.typ
 
 export class CreateTreinosFromParsedJsonUseCase {
   async execute({ userId, treinos }: CreateTreinosFromParsedJsonInput) {
-    return prisma.$transaction(async () => {
+    return prisma.$transaction(async (tx) => {
       const createdTreinos = [];
 
       for (const treino of treinos) {
-        const createdTreino = await prisma.tREINO.create({
+        const createdTreino = await tx.tREINO.create({
           data: {
             USER_ID: userId,
             NOME: treino.nome,
@@ -15,21 +15,21 @@ export class CreateTreinosFromParsedJsonUseCase {
         });
 
         for (const exercicio of treino.exercicios) {
-          let existingExercicio = await prisma.eXERCICIO.findFirst({
+          let existingExercicio = await tx.eXERCICIO.findFirst({
             where: {
               NOME: exercicio.nome,
             },
           });
 
           if (!existingExercicio) {
-            existingExercicio = await prisma.eXERCICIO.create({
+            existingExercicio = await tx.eXERCICIO.create({
               data: {
                 NOME: exercicio.nome,
               },
             });
           }
 
-          await prisma.tREINO_EXERCICIO.create({
+          await tx.tREINO_EXERCICIO.create({
             data: {
               TREINO_ID: createdTreino.ID,
               EXERCICIO_ID: existingExercicio.ID,
@@ -42,6 +42,6 @@ export class CreateTreinosFromParsedJsonUseCase {
       }
 
       return createdTreinos;
-    });
+    }, { timeout: 15000 });
   }
 }
