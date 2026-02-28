@@ -19,6 +19,14 @@ export interface BotContext extends Context {
 export const bot = new Telegraf<BotContext>(process.env.TOKEN_BOT_TELEGRAM!)
 const deps = createBotDependencies()
 
+bot.catch((error, ctx) => {
+  console.error("Erro ao processar update do Telegram.", {
+    updateType: ctx.updateType,
+    userId: ctx.from?.id,
+    error,
+  })
+})
+
 const CMD_SALVAR_TREINO = /^(salvartreino|salvar_treino)$/i
 const CMD_RESUMO_SEMANA = /^(resumo_semana|resumosemana)$/i
 
@@ -49,14 +57,23 @@ bot.use(async (ctx, next) => {
   const telegramId = ctx.from?.id?.toString();
   if (!telegramId) return next();
 
-  const nome = ctx.from!.first_name;
+  try {
+    const nome = ctx.from!.first_name;
 
-  const user = await deps.saveUserUseCase.execute({
-    telegramId,
-    nome,
-  });
+    const user = await deps.saveUserUseCase.execute({
+      telegramId,
+      nome,
+    });
 
-  ctx.state.user = user;
+    ctx.state.user = user;
+  } catch (error) {
+    console.error("Falha ao criar/atualizar usuário no banco.", {
+      telegramId,
+      error,
+    })
+    await ctx.reply("Tive um erro interno ao carregar seu perfil. Tente novamente em instantes.")
+    return
+  }
 
   return next();
 });
