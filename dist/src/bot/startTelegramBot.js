@@ -10,7 +10,7 @@ const RETRYABLE_STARTUP_ERROR_CODES = new Set([
     "EAI_AGAIN",
     "ENOTFOUND",
 ]);
-const SLOW_STARTUP_WARNING_MS = 10000;
+const SLOW_STARTUP_WARNING_MS = 10_000;
 const DEFAULT_WEBHOOK_PATH = "/telegram/webhook";
 const DEFAULT_WEBHOOK_PORT = 3000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -105,7 +105,7 @@ async function startTelegramBot() {
                 console.error("Falha ao iniciar o bot (erro não transitório):", error);
                 throw error;
             }
-            const delayMs = Math.min(30000, 2000 * attempt);
+            const delayMs = Math.min(30_000, 2_000 * attempt);
             const code = getStartupErrorCode(error) ?? "UNKNOWN";
             console.error(`Falha ao conectar no Telegram (${code}) na tentativa ${attempt}. Nova tentativa em ${Math.round(delayMs / 1000)}s.`);
             await sleep(delayMs);

@@ -14,6 +14,7 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@tsconfig/node-lts": "latest",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.2.3",
     "prisma": "^6.19.2",
@@ -28,5 +29,5 @@
     "openai": "^6.22.0",
     "telegraf": "^4.16.3"
   },
-  "type": "module"
+  "type": "commonjs"
 }
