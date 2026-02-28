@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
-    "build": "npm run clean && tsc",
+    "postbuild:prisma-cjs": "mkdir -p dist/generated/prisma && printf '{\"type\":\"commonjs\"}\\n' > dist/generated/prisma/package.json",
+    "build": "npm run clean && tsc && npm run postbuild:prisma-cjs",
     "start": "npm run build && node dist/src/index.js"
   },
   "keywords": [],
