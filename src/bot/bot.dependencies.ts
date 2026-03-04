@@ -1,4 +1,5 @@
 import { AdvanceExercicioUseCase } from "../cases/advanceExercicio/advanceExercicio.cases";
+import { PreviousExercicioUseCase } from "../cases/previousExercicio/previousExercicio.cases";
 import { FinishSessaoUseCase } from "../cases/finishSessao/finishSessao.cases";
 import { GetCurrentExercicioUseCase } from "../cases/getCurrentExercicio/getCurrentExercicio.cases";
 import { GetResumoPosTreinoUseCase } from "../cases/getResumoPosTreino/getResumoPosTreino.cases";
@@ -20,6 +21,7 @@ export interface BotDependencies {
   startSessionUseCase: StartTreinoUseCase;
   getCurrentExercicioUseCase: GetCurrentExercicioUseCase;
   advanceExercicioUseCase: AdvanceExercicioUseCase;
+  previousExercicioUseCase: PreviousExercicioUseCase;
   finishSessionUseCase: FinishSessaoUseCase;
   registerSerieUseCase: RegisterExecucaoUseCase;
   getUserTreinosUseCase: GetUserTreinosUseCase;
@@ -40,6 +42,7 @@ export function createBotDependencies(
     startSessionUseCase: new StartTreinoUseCase(),
     getCurrentExercicioUseCase: new GetCurrentExercicioUseCase(),
     advanceExercicioUseCase: new AdvanceExercicioUseCase(),
+    previousExercicioUseCase: new PreviousExercicioUseCase(),
     finishSessionUseCase: new FinishSessaoUseCase(),
     registerSerieUseCase: new RegisterExecucaoUseCase(),
     getUserTreinosUseCase: new GetUserTreinosUseCase(),
@@ -52,4 +55,3 @@ export function createBotDependencies(
 
   return { ...defaults, ...overrides };
 }
-

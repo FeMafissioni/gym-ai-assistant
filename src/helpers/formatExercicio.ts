@@ -16,5 +16,6 @@ export function formatExercicio(exercicio: Exercicio) {
 Use:
 -> Para registrar envie: (peso) (repetições)
 -> /proximo para avançar para o próximo exercício
+-> /voltar para retornar ao exercício anterior
 `
 }

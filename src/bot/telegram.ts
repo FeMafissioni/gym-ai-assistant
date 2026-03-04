@@ -83,7 +83,7 @@ bot.start((ctx) => {
     ctx.reply(
       `Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
       "\n\nEstou aqui para te acompanhar no treino." +
-      "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje."
+      "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /SalvarTreino"
     )
 })
 
@@ -161,6 +161,21 @@ bot.command("proximo", async (ctx) => {
 
   const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId })
   
+  await ctx.reply(formatExercicio(exercicioAtual))
+})
+
+bot.command("voltar", async (ctx) => {
+  const userId = ctx.state.user.id
+
+  const hasPreviousExercise = await deps.previousExercicioUseCase.execute({ userId })
+
+  if (!hasPreviousExercise.hasPreviousExercicio) {
+    await ctx.reply("Você já está no primeiro exercício deste treino.")
+    return
+  }
+
+  const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId })
+
   await ctx.reply(formatExercicio(exercicioAtual))
 })
 

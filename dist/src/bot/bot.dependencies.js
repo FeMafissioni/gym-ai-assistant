@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createBotDependencies = createBotDependencies;
 const advanceExercicio_cases_1 = require("../cases/advanceExercicio/advanceExercicio.cases");
+const previousExercicio_cases_1 = require("../cases/previousExercicio/previousExercicio.cases");
 const finishSessao_cases_1 = require("../cases/finishSessao/finishSessao.cases");
 const getCurrentExercicio_cases_1 = require("../cases/getCurrentExercicio/getCurrentExercicio.cases");
 const getResumoPosTreino_cases_1 = require("../cases/getResumoPosTreino/getResumoPosTreino.cases");
@@ -23,6 +24,7 @@ function createBotDependencies(overrides = {}) {
         startSessionUseCase: new startTreino_cases_1.StartTreinoUseCase(),
         getCurrentExercicioUseCase: new getCurrentExercicio_cases_1.GetCurrentExercicioUseCase(),
         advanceExercicioUseCase: new advanceExercicio_cases_1.AdvanceExercicioUseCase(),
+        previousExercicioUseCase: new previousExercicio_cases_1.PreviousExercicioUseCase(),
         finishSessionUseCase: new finishSessao_cases_1.FinishSessaoUseCase(),
         registerSerieUseCase: new registerExecucao_cases_1.RegisterExecucaoUseCase(),
         getUserTreinosUseCase: new getUserTreinos_cases_1.GetUserTreinosUseCase(),

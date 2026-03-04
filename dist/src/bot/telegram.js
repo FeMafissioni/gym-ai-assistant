@@ -128,6 +128,16 @@ exports.bot.command("proximo", async (ctx) => {
     const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId });
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
+exports.bot.command("voltar", async (ctx) => {
+    const userId = ctx.state.user.id;
+    const hasPreviousExercise = await deps.previousExercicioUseCase.execute({ userId });
+    if (!hasPreviousExercise.hasPreviousExercicio) {
+        await ctx.reply("Você já está no primeiro exercício deste treino.");
+        return;
+    }
+    const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId });
+    await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
+});
 exports.bot.on("text", async (ctx, next) => {
     const userId = ctx.state.user.id;
     const texto = ctx.message.text.trim();

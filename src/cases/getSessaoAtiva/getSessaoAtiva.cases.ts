@@ -12,6 +12,9 @@ export class GetSessaoAtivaUseCase {
         USER_ID: userId,
         FINALIZADO_EM: null,
       },
+      orderBy: {
+        INICIADO_EM: "desc",
+      },
       include: {
         TREINO: true,
       },
