@@ -7,7 +7,9 @@
     "clean": "rm -rf dist",
     "postbuild:prisma-cjs": "mkdir -p dist/generated/prisma && printf '{\"type\":\"commonjs\"}\\n' > dist/generated/prisma/package.json",
     "build": "npm run clean && prisma generate && tsc && npm run postbuild:prisma-cjs",
-    "start": "npm run build && node dist/src/index.js"
+    "start": "npm run build && node dist/src/index.js",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:push": "prisma db push"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +17,6 @@
   "description": "",
   "devDependencies": {
     "@tsconfig/node-lts": "latest",
-    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.2.3",
     "prisma": "^6.19.2",
     "ts-node-dev": "^2.0.0",
@@ -23,7 +24,6 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@prisma/adapter-better-sqlite3": "^7.4.0",
     "@prisma/client": "^6.19.2",
     "dotenv": "^17.3.1",
     "openai": "^6.22.0",

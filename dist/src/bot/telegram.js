@@ -65,7 +65,7 @@ exports.bot.start((ctx) => {
     const firstName = ctx.from?.first_name ?? "atleta";
     ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
         "\n\nEstou aqui para te acompanhar no treino." +
-        "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje.");
+        "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /SalvarTreino");
 });
 exports.bot.command(CMD_SALVAR_TREINO, async (ctx) => {
     await ctx.reply("Enviando treino para o servidor...");

@@ -48,7 +48,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NullsOrder = exports.SortOrder = exports.EXECUCAO_EXERCICIOScalarFieldEnum = exports.SESSAO_TREINOScalarFieldEnum = exports.TREINO_EXERCICIOScalarFieldEnum = exports.EXERCICIOScalarFieldEnum = exports.TREINOScalarFieldEnum = exports.USERScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
+exports.NullsOrder = exports.QueryMode = exports.SortOrder = exports.EXECUCAO_EXERCICIOScalarFieldEnum = exports.SESSAO_TREINOScalarFieldEnum = exports.TREINO_EXERCICIOScalarFieldEnum = exports.EXERCICIOScalarFieldEnum = exports.TREINOScalarFieldEnum = exports.USERScalarFieldEnum = exports.TransactionIsolationLevel = exports.ModelName = exports.AnyNull = exports.JsonNull = exports.DbNull = exports.NullTypes = exports.Decimal = void 0;
 const runtime = __importStar(require("@prisma/client/runtime/index-browser"));
 exports.Decimal = runtime.Decimal;
 exports.NullTypes = {
@@ -86,6 +86,9 @@ exports.ModelName = {
  * Enums
  */
 exports.TransactionIsolationLevel = runtime.makeStrictEnum({
+    ReadUncommitted: 'ReadUncommitted',
+    ReadCommitted: 'ReadCommitted',
+    RepeatableRead: 'RepeatableRead',
     Serializable: 'Serializable'
 });
 exports.USERScalarFieldEnum = {
@@ -129,6 +132,10 @@ exports.EXECUCAO_EXERCICIOScalarFieldEnum = {
 exports.SortOrder = {
     asc: 'asc',
     desc: 'desc'
+};
+exports.QueryMode = {
+    default: 'default',
+    insensitive: 'insensitive'
 };
 exports.NullsOrder = {
     first: 'first',
