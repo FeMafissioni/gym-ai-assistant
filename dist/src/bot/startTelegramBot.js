@@ -98,6 +98,12 @@ async function startTelegramBot() {
             else {
                 await telegram_1.bot.launch();
             }
+            try {
+                await (0, telegram_1.registerTelegramCommands)();
+            }
+            catch (error) {
+                console.error("Falha ao registrar comandos do bot no Telegram.", error);
+            }
             return;
         }
         catch (error) {

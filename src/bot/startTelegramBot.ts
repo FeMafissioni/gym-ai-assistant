@@ -1,4 +1,4 @@
-import { bot } from "./telegram";
+import { bot, registerTelegramCommands } from "./telegram";
 
 const RETRYABLE_STARTUP_ERROR_CODES = new Set([
   "ETIMEDOUT",
@@ -119,6 +119,12 @@ export async function startTelegramBot() {
         });
       } else {
         await bot.launch();
+      }
+
+      try {
+        await registerTelegramCommands();
+      } catch (error) {
+        console.error("Falha ao registrar comandos do bot no Telegram.", error);
       }
 
       return;

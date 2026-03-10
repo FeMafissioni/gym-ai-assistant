@@ -3,7 +3,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bot = void 0;
+exports.TELEGRAM_COMMANDS = exports.bot = void 0;
+exports.registerTelegramCommands = registerTelegramCommands;
 const telegraf_1 = require("telegraf");
 const dotenv_1 = __importDefault(require("dotenv"));
 const formatExercicio_1 = require("../helpers/formatExercicio");
@@ -13,6 +14,20 @@ const bot_dependencies_1 = require("./bot.dependencies");
 dotenv_1.default.config();
 exports.bot = new telegraf_1.Telegraf(process.env.TOKEN_BOT_TELEGRAM);
 const deps = (0, bot_dependencies_1.createBotDependencies)();
+exports.TELEGRAM_COMMANDS = [
+    { command: "start", description: "inicia o bot e mostra instrucoes" },
+    { command: "iniciar", description: "inicia uma sessao de treino" },
+    { command: "proximo", description: "avanca para o proximo exercicio" },
+    { command: "voltar", description: "retorna ao exercicio anterior" },
+    { command: "finalizar", description: "finaliza a sessao ativa" },
+    { command: "salvar_treino", description: "salva treinos a partir de texto" },
+    { command: "salvartreino", description: "alias de /salvar_treino" },
+    { command: "resumo_semana", description: "gera o resumo semanal" },
+    { command: "resumosemana", description: "alias de /resumo_semana" },
+];
+async function registerTelegramCommands() {
+    await exports.bot.telegram.setMyCommands(exports.TELEGRAM_COMMANDS);
+}
 exports.bot.catch((error, ctx) => {
     console.error("Erro ao processar update do Telegram.", {
         updateType: ctx.updateType,
@@ -65,7 +80,7 @@ exports.bot.start((ctx) => {
     const firstName = ctx.from?.first_name ?? "atleta";
     ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
         "\n\nEstou aqui para te acompanhar no treino." +
-        "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /SalvarTreino");
+        "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /salvar_treino");
 });
 exports.bot.command(CMD_SALVAR_TREINO, async (ctx) => {
     await ctx.reply("Enviando treino para o servidor...");
