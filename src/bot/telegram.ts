@@ -30,7 +30,30 @@ export const TELEGRAM_COMMANDS = [
 ] as const
 
 export async function registerTelegramCommands() {
-  await bot.telegram.setMyCommands(TELEGRAM_COMMANDS)
+  const commandScopes = [
+    {},
+    { scope: { type: "all_private_chats" as const } },
+    { scope: { type: "all_group_chats" as const } },
+  ]
+  const languages = [undefined, "pt", "en"]
+
+  for (const scopeExtra of commandScopes) {
+    for (const languageCode of languages) {
+      await bot.telegram.setMyCommands(TELEGRAM_COMMANDS, {
+        ...scopeExtra,
+        ...(languageCode ? { language_code: languageCode } : {}),
+      })
+    }
+  }
+
+  await bot.telegram.setChatMenuButton({
+    menuButton: {
+      type: "commands",
+    },
+  })
+
+  const registeredCommands = await bot.telegram.getMyCommands()
+  console.log(`Comandos do Telegram registrados: ${registeredCommands.length}`)
 }
 
 bot.catch((error, ctx) => {
@@ -92,9 +115,15 @@ bot.use(async (ctx, next) => {
   return next();
 });
 
-bot.start((ctx) => {
+bot.start(async (ctx) => {
+    try {
+      await registerTelegramCommands()
+    } catch (error) {
+      console.error("Falha ao sincronizar comandos no /start.", error)
+    }
+
     const firstName = ctx.from?.first_name ?? "atleta";
-    ctx.reply(
+    await ctx.reply(
       `Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
       "\n\nEstou aqui para te acompanhar no treino." +
       "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /salvar_treino"

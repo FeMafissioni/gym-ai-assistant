@@ -13,7 +13,7 @@ const formatResumoSemanal_1 = require("../helpers/formatResumoSemanal");
 const bot_dependencies_1 = require("./bot.dependencies");
 dotenv_1.default.config();
 exports.bot = new telegraf_1.Telegraf(process.env.TOKEN_BOT_TELEGRAM);
-const deps = (0, bot_dependencies_1.createBotDependencies)();
+const dependencies = (0, bot_dependencies_1.createBotDependencies)();
 exports.TELEGRAM_COMMANDS = [
     { command: "start", description: "inicia o bot e mostra instrucoes" },
     { command: "iniciar", description: "inicia uma sessao de treino" },
@@ -21,12 +21,30 @@ exports.TELEGRAM_COMMANDS = [
     { command: "voltar", description: "retorna ao exercicio anterior" },
     { command: "finalizar", description: "finaliza a sessao ativa" },
     { command: "salvar_treino", description: "salva treinos a partir de texto" },
-    { command: "salvartreino", description: "alias de /salvar_treino" },
     { command: "resumo_semana", description: "gera o resumo semanal" },
-    { command: "resumosemana", description: "alias de /resumo_semana" },
 ];
 async function registerTelegramCommands() {
-    await exports.bot.telegram.setMyCommands(exports.TELEGRAM_COMMANDS);
+    const commandScopes = [
+        {},
+        { scope: { type: "all_private_chats" } },
+        { scope: { type: "all_group_chats" } },
+    ];
+    const languages = [undefined, "pt", "en"];
+    for (const scopeExtra of commandScopes) {
+        for (const languageCode of languages) {
+            await exports.bot.telegram.setMyCommands(exports.TELEGRAM_COMMANDS, {
+                ...scopeExtra,
+                ...(languageCode ? { language_code: languageCode } : {}),
+            });
+        }
+    }
+    await exports.bot.telegram.setChatMenuButton({
+        menuButton: {
+            type: "commands",
+        },
+    });
+    const registeredCommands = await exports.bot.telegram.getMyCommands();
+    console.log(`Comandos do Telegram registrados: ${registeredCommands.length}`);
 }
 exports.bot.catch((error, ctx) => {
     console.error("Erro ao processar update do Telegram.", {
@@ -39,10 +57,10 @@ const CMD_SALVAR_TREINO = /^(salvartreino|salvar_treino)$/i;
 const CMD_RESUMO_SEMANA = /^(resumo_semana|resumosemana)$/i;
 async function sendPostWorkoutSummary(ctx, userId, sessaoId) {
     try {
-        const resumo = await deps.getResumoPosTreinoUseCase.execute({ userId, sessaoId });
+        const resumo = await dependencies.getResumoPosTreinoUseCase.execute({ userId, sessaoId });
         let mensagemResumo;
         try {
-            mensagemResumo = await deps.postTreinoResumoService.generate(resumo);
+            mensagemResumo = await dependencies.postTreinoResumoService.generate(resumo);
         }
         catch (error) {
             console.error("Falha ao gerar resumo com IA. Enviando fallback determinístico.", error);
@@ -60,7 +78,7 @@ exports.bot.use(async (ctx, next) => {
         return next();
     try {
         const nome = ctx.from.first_name;
-        const user = await deps.saveUserUseCase.execute({
+        const user = await dependencies.saveUserUseCase.execute({
             telegramId,
             nome,
         });
@@ -76,21 +94,27 @@ exports.bot.use(async (ctx, next) => {
     }
     return next();
 });
-exports.bot.start((ctx) => {
+exports.bot.start(async (ctx) => {
+    try {
+        await registerTelegramCommands();
+    }
+    catch (error) {
+        console.error("Falha ao sincronizar comandos no /start.", error);
+    }
     const firstName = ctx.from?.first_name ?? "atleta";
-    ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
+    await ctx.reply(`Bem-vindo ao Gym-Ai-Assist, ${firstName}!` +
         "\n\nEstou aqui para te acompanhar no treino." +
         "\nPróximo passo: use o comando /iniciar para escolher seu treino de hoje. Caso ainda não tenha treinos cadastrados, envie seu treino no comando /salvar_treino");
 });
 exports.bot.command(CMD_SALVAR_TREINO, async (ctx) => {
     await ctx.reply("Enviando treino para o servidor...");
-    const retornoIa = await deps.treinoParserService.parse(ctx.message.text);
+    const retornoIa = await dependencies.treinoParserService.parse(ctx.message.text);
     if (!retornoIa.success) {
         await ctx.reply(`Erro ao processar treino: ${retornoIa.erro}`);
         return;
     }
     try {
-        await deps.createTreinosFromParsedJsonUseCase.execute({
+        await dependencies.createTreinosFromParsedJsonUseCase.execute({
             userId: ctx.state.user.id,
             treinos: retornoIa.treinos,
         });
@@ -103,7 +127,7 @@ exports.bot.command(CMD_SALVAR_TREINO, async (ctx) => {
 });
 exports.bot.command("iniciar", async (ctx) => {
     const userId = ctx.state.user.id;
-    const treinos = await deps.getUserTreinosUseCase.execute({ userId });
+    const treinos = await dependencies.getUserTreinosUseCase.execute({ userId });
     if (!treinos.treinos.length) {
         await ctx.reply("Você ainda não possui treinos cadastrados.");
         return;
@@ -123,34 +147,34 @@ exports.bot.action(/INICIAR_TREINO_(.+)/, async (ctx) => {
     const userId = ctx.state.user.id;
     const treinoId = ctx.match[1];
     //Sessão iniciada
-    await deps.startSessionUseCase.execute({
+    await dependencies.startSessionUseCase.execute({
         userId,
         treinoId
     });
-    const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({
+    const exercicioAtual = await dependencies.getCurrentExercicioUseCase.execute({
         userId,
     });
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
 exports.bot.command("proximo", async (ctx) => {
     const userId = ctx.state.user.id;
-    var hasOtherExercise = await deps.advanceExercicioUseCase.execute({ userId });
+    var hasOtherExercise = await dependencies.advanceExercicioUseCase.execute({ userId });
     if (hasOtherExercise.sessaoFinalizada) {
         await ctx.reply("Sessão finalizada. Parabéns! 💪");
         await sendPostWorkoutSummary(ctx, userId, hasOtherExercise.sessaoId);
         return;
     }
-    const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId });
+    const exercicioAtual = await dependencies.getCurrentExercicioUseCase.execute({ userId });
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
 exports.bot.command("voltar", async (ctx) => {
     const userId = ctx.state.user.id;
-    const hasPreviousExercise = await deps.previousExercicioUseCase.execute({ userId });
+    const hasPreviousExercise = await dependencies.previousExercicioUseCase.execute({ userId });
     if (!hasPreviousExercise.hasPreviousExercicio) {
         await ctx.reply("Você já está no primeiro exercício deste treino.");
         return;
     }
-    const exercicioAtual = await deps.getCurrentExercicioUseCase.execute({ userId });
+    const exercicioAtual = await dependencies.getCurrentExercicioUseCase.execute({ userId });
     await ctx.reply((0, formatExercicio_1.formatExercicio)(exercicioAtual));
 });
 exports.bot.on("text", async (ctx, next) => {
@@ -158,7 +182,7 @@ exports.bot.on("text", async (ctx, next) => {
     const texto = ctx.message.text.trim();
     if (texto.startsWith("/"))
         return next();
-    const sessaoAtiva = await deps.getSessaoAtivaUseCase.execute({ userId });
+    const sessaoAtiva = await dependencies.getSessaoAtivaUseCase.execute({ userId });
     if (!sessaoAtiva) {
         await ctx.reply("Você não possui uma sessão ativa no momento. Inicie um treino com /iniciar.");
         return;
@@ -169,7 +193,7 @@ exports.bot.on("text", async (ctx, next) => {
     const peso = Number(match[1]);
     const repeticoes = Number(match[2]);
     try {
-        await deps.registerSerieUseCase.execute({
+        await dependencies.registerSerieUseCase.execute({
             userId,
             peso,
             repeticoes,
@@ -183,7 +207,7 @@ exports.bot.on("text", async (ctx, next) => {
 exports.bot.command("finalizar", async (ctx) => {
     const userId = ctx.state.user.id;
     try {
-        const sessaoFinalizada = await deps.finishSessionUseCase.execute({ userId });
+        const sessaoFinalizada = await dependencies.finishSessionUseCase.execute({ userId });
         await ctx.reply("Treino finalizado. Parabéns! 💪");
         await sendPostWorkoutSummary(ctx, userId, sessaoFinalizada.sessaoId);
     }
@@ -194,10 +218,10 @@ exports.bot.command("finalizar", async (ctx) => {
 exports.bot.command(CMD_RESUMO_SEMANA, async (ctx) => {
     const userId = ctx.state.user.id;
     try {
-        const resumo = await deps.getResumoSemanalUseCase.execute({ userId });
+        const resumo = await dependencies.getResumoSemanalUseCase.execute({ userId });
         let mensagemResumo;
         try {
-            mensagemResumo = await deps.resumoSemanalService.generate(resumo);
+            mensagemResumo = await dependencies.resumoSemanalService.generate(resumo);
         }
         catch (error) {
             console.error("Falha ao gerar resumo semanal com IA. Enviando fallback determinístico.", error);
